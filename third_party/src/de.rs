@@ -276,7 +276,12 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     {
         let pair = self.pair.take().unwrap();
         let span = pair.as_span();
-        let mut res = (move || visitor.visit_i64(parse_number(&pair)? as i64))();
+
+        let mut res = (move || if matches!(pair.as_rule(), Rule::number) && is_int(pair.as_str()) {
+            visitor.visit_i64(parse_integer(&pair)? as i64)
+        } else {
+            visitor.visit_i64(parse_number(&pair)? as i64)
+        })();
         error::set_location(&mut res, &span);
         res
     }
